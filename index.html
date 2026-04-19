@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Student Complaint Portal</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo-area">
+
+<img src="https://tse4.mm.bing.net/th/id/OIP.UIq2KvlWALz9qMsgyrjebQHaJH?rs=1&pid=ImgDetMain&o=7&rm=3" class="logo-img">
+
+<div class="logo-text">Student Portal</div>
+
+</div>
+
+<input id="searchBar" placeholder="Search complaints">
+
+<div class="nav-buttons">
+
+
+
+</div>
+
+<div class="nav-buttons">
+
+<label class="toggle-switch">
+<input type="checkbox" id="theme-toggle">
+<span class="slider"></span>
+</label>
+
+<a href="admin-login.html" class="admin-link">Admin</a>
+
+</div>
+
+</header>
+
+<div class="container">
+
+<aside class="sidebar">
+
+<h3>Categories</h3>
+
+<ul>
+<li onclick="filterCategory('All')">All</li>
+<li onclick="filterCategory('Hostel')">Hostel</li>
+<li onclick="filterCategory('Canteen')">Canteen</li>
+<li onclick="filterCategory('Academics')">Academics</li>
+<li onclick="filterCategory('Transport')">Transport</li>
+</ul>
+
+<h3>Sort</h3>
+
+<ul>
+<li onclick="sortPosts('top')">Top</li>
+<li onclick="sortPosts('new')">New</li>
+<li onclick="sortPosts('rising')">Rising</li>
+</ul>
+
+</aside>
+
+<main id="posts"></main>
+
+<aside class="rightbar">
+
+<h3>Trending</h3>
+
+<div id="trending"></div>
+
+</aside>
+
+</div>
+
+<button class="floating-btn" onclick="window.location.href='post-complaint.html'">+</button>
+
+
+
+<div id="imageViewer">
+<img id="viewerImage">
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Admin Panel - Student Complaint Portal</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body class="dark">
+
+<header>
+
+<h1>Admin Panel</h1>
+
+<div class="nav-buttons">
+
+<label class="toggle-switch">
+<input type="checkbox" id="theme-toggle">
+<span class="slider"></span>
+</label>
+
+<a href="index.html">Back to Portal</a>
+
+</div>
+
+</header>
+
+<div class="container">
+
+<div class="admin-tabs">
+    <button class="tab-button active" onclick="showTab('moderation')">Complaint Moderation</button>
+    <button class="tab-button" onclick="showTab('analytics')">Analytics</button>
+</div>
+
+<div id="moderation-tab" class="tab-content">
+    <h2>Complaint Moderation</h2>
+    <div id="adminPosts" class="posts"></div>
+</div>
+
+<div id="analytics-tab" class="tab-content" style="display: none;">
+    <h2>Analytics Dashboard</h2>
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Total Complaints</h3>
+            <div class="stat-number" id="total-complaints">0</div>
+        </div>
+        <div class="analytics-card">
+            <h3>Total Votes</h3>
+            <div class="stat-number" id="total-votes">0</div>
+        </div>
+        <div class="analytics-card">
+            <h3>Categories</h3>
+            <canvas id="categories-chart" width="300" height="200"></canvas>
+        </div>
+        <div class="analytics-card">
+            <h3>Status Distribution</h3>
+            <canvas id="statuses-chart" width="300" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+
+let complaints = []
+let container = document.getElementById("adminPosts")
+
+function showTab(tabName) {
+    // Hide all tabs
+    document.getElementById('moderation-tab').style.display = 'none';
+    document.getElementById('analytics-tab').style.display = 'none';
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // Add active class to clicked button
+    document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+    
+    // Load data for the tab
+    if (tabName === 'moderation') {
+        loadComplaints();
+    } else if (tabName === 'analytics') {
+        loadAnalytics();
+    }
+}
+
+async function loadComplaints() {
+    try {
+        const response = await fetch('/api/complaints')
+        complaints = await response.json()
+        renderAdmin()
+    } catch (error) {
+        console.error('Error loading complaints:', error)
+    }
+}
+
+async function loadAnalytics() {
+    try {
+        const response = await fetch('/api/analytics')
+        const data = await response.json()
+        renderAnalytics(data)
+    } catch (error) {
+        console.error('Error loading analytics:', error)
+    }
+}
+
+function renderAnalytics(data) {
+    document.getElementById('total-complaints').textContent = data.total_complaints;
+    document.getElementById('total-votes').textContent = data.total_votes;
+    
+    // Destroy existing charts if they exist
+    if (window.categoriesChart) {
+        window.categoriesChart.destroy();
+    }
+    if (window.statusesChart) {
+        window.statusesChart.destroy();
+    }
+    
+    // Render categories pie chart
+    const categoriesCtx = document.getElementById('categories-chart').getContext('2d');
+    const categoriesData = {
+        labels: Object.keys(data.categories),
+        datasets: [{
+            data: Object.values(data.categories),
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF',
+                '#FF9F40'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    window.categoriesChart = new Chart(categoriesCtx, {
+        type: 'pie',
+        data: categoriesData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: document.body.classList.contains('dark') ? '#e6e6e6' : '#111'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Render statuses pie chart
+    const statusesCtx = document.getElementById('statuses-chart').getContext('2d');
+    const statusesData = {
+        labels: Object.keys(data.statuses),
+        datasets: [{
+            data: Object.values(data.statuses),
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB', 
+                '#FFCE56',
+                '#4BC0C0'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    window.statusesChart = new Chart(statusesCtx, {
+        type: 'pie',
+        data: statusesData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: document.body.classList.contains('dark') ? '#e6e6e6' : '#111'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderAdmin(){
+    container.innerHTML=""
+    complaints.forEach((c,i)=>{
+        const author = c.anonymous ? 'Anonymous' : c.author
+        const statusOptions = ['Sent', 'Pending', 'Rejected', 'Accepted']
+        const statusHTML = statusOptions.map(s => `<option value="${s}" ${c.status === s ? 'selected' : ''}>${s}</option>`).join('')
+        const reasonDisplay = c.status === 'Rejected' ? 'block' : 'none'
+        const reasonHTML = `<div class="rejection-reason" style="display: ${reasonDisplay};"><label>Rejection Reason:</label><textarea id="reason-${c.id}" placeholder="Enter reason for rejection">${c.rejection_reason || ''}</textarea></div>`
+        container.innerHTML += `
+        <div class="post">
+            <div class="post-header">
+                <h3>${c.title}</h3>
+                <span class="category">${c.category}</span>
+                <span class="status status-${c.status.toLowerCase()}">${c.status}</span>
+            </div>
+            <p class="description">${c.description}</p>
+            <div class="status-update">
+                <label>Update Status:</label>
+                <select id="status-${c.id}" onchange="toggleReasonField(${c.id})">
+                    ${statusHTML}
+                </select>
+                <button onclick="updateStatus(${c.id})">Update</button>
+                ${reasonHTML}
+            </div>
+            <div class="post-footer">
+                <span class="author">By: ${author}</span>
+                <span class="votes">Votes: ${c.votes}</span>
+                <button class="delete-btn" onclick="deletePost(${c.id})">Delete</button>
+            </div>
+        </div>`
+    })
+}
+
+async function deletePost(id){
+    if (!confirm("Are you sure you want to delete this complaint?")) return
+    try {
+        const response = await fetch(`/api/complaints/${id}`, { method: 'DELETE' })
+        if (response.ok) {
+            loadComplaints()
+            alert('Complaint deleted successfully')
+        } else {
+            alert('Failed to delete complaint')
+        }
+    } catch (error) {
+        console.error('Error deleting post:', error)
+        alert('Error deleting complaint')
+    }
+}
+
+function toggleReasonField(id) {
+    const statusSelect = document.getElementById(`status-${id}`)
+    const reasonDiv = document.querySelector(`#reason-${id}`).parentElement
+    if (statusSelect.value === 'Rejected') {
+        reasonDiv.style.display = 'block'
+    } else {
+        reasonDiv.style.display = 'none'
+    }
+}
+
+async function updateStatus(id) {
+    const statusSelect = document.getElementById(`status-${id}`)
+    const status = statusSelect.value
+    let rejection_reason = null
+    if (status === 'Rejected') {
+        const reasonTextarea = document.getElementById(`reason-${id}`)
+        rejection_reason = reasonTextarea.value.trim()
+        if (!rejection_reason) {
+            alert('Please provide a reason for rejection')
+            return
+        }
+    }
+
+    try {
+        const response = await fetch(`/api/complaints/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status, rejection_reason: rejection_reason })
+        })
+        const result = await response.json()
+        if (result.success) {
+            loadComplaints()
+            alert('Status updated successfully')
+        } else {
+            alert('Failed to update status: ' + result.message)
+        }
+    } catch (error) {
+        console.error('Error updating status:', error)
+        alert('Error updating status')
+    }
+}
+
+// Update chart legend colors based on theme
+function updateChartColors() {
+    const textColor = document.body.classList.contains('dark') ? '#e6e6e6' : '#111';
+    
+    if (window.categoriesChart) {
+        window.categoriesChart.options.plugins.legend.labels.color = textColor;
+        window.categoriesChart.update();
+    }
+    
+    if (window.statusesChart) {
+        window.statusesChart.options.plugins.legend.labels.color = textColor;
+        window.statusesChart.update();
+    }
+}
+
+// Theme toggle
+const themeToggle = document.getElementById('theme-toggle')
+if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+        document.body.classList.toggle('light')
+        document.body.classList.toggle('dark')
+        const slider = document.querySelector('.slider')
+        if (document.body.classList.contains('dark')) {
+            slider.classList.add('dark')
+        } else {
+            slider.classList.remove('dark')
+        }
+        
+        // Update chart legend colors
+        updateChartColors()
+    })
+    // Set initial state
+    if (document.body.classList.contains('dark')) {
+        themeToggle.checked = false
+        document.querySelector('.slider').classList.add('dark')
+    } else {
+        themeToggle.checked = true
+        document.querySelector('.slider').classList.remove('dark')
+    }
+}
+
+loadComplaints()
+
+</script>
+
+</body>
+
+</html>

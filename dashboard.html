@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Complaint Analytics</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body class="dark">
+
+<header>
+
+<h2>Analytics Dashboard</h2>
+
+<a href="index.html">Back</a>
+
+</header>
+
+<div class="dashboard">
+
+<canvas id="categoryChart"></canvas>
+
+<canvas id="statusChart"></canvas>
+
+<canvas id="votesChart"></canvas>
+
+</div>
+
+<script src="script.js"></script>
+
+<script>
+async function loadAnalytics() {
+    try {
+        const response = await fetch('/api/analytics')
+        const data = await response.json()
+
+        // Category chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d')
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(data.categories),
+                datasets: [{
+                    data: Object.values(data.categories),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: 'Complaints by Category'
+                }
+            }
+        })
+
+        // Status chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d')
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data.statuses),
+                datasets: [{
+                    label: 'Count',
+                    data: Object.values(data.statuses),
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+                }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: 'Complaints by Status'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        })
+
+        // Votes chart (simple bar chart)
+        const votesCtx = document.getElementById('votesChart').getContext('2d')
+        new Chart(votesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Votes'],
+                datasets: [{
+                    label: 'Votes',
+                    data: [data.total_votes],
+                    backgroundColor: '#36A2EB'
+                }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: 'Total Votes'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        })
+    } catch (error) {
+        console.error('Error loading analytics:', error)
+    }
+}
+
+loadAnalytics()
+</script>

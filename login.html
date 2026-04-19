@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Student Complaint Portal Login</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+/* Animated gradient background */
+
+body{
+margin:0;
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+font-family:Arial, Helvetica, sans-serif;
+background:linear-gradient(-45deg,#1f2937,#0f172a,#1e3a8a,#111827);
+background-size:400% 400%;
+animation:bgmove 12s ease infinite;
+color:white;
+}
+
+@keyframes bgmove{
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
+}
+
+
+/* Glassmorphism card */
+
+.login-box{
+width:360px;
+padding:35px;
+border-radius:16px;
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(15px);
+border:1px solid rgba(255,255,255,0.15);
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
+text-align:center;
+}
+
+
+/* Logo */
+
+.logo{
+width:70px;
+margin-bottom:10px;
+}
+
+.portal-title{
+margin:5px 0;
+font-size:24px;
+}
+
+.portal-subtitle{
+font-size:14px;
+opacity:.8;
+margin-bottom:25px;
+}
+
+
+/* Inputs */
+
+.login-form input{
+width:100%;
+padding:12px;
+margin:8px 0;
+border-radius:8px;
+border:none;
+outline:none;
+}
+
+
+/* Password container */
+
+.password-box{
+position:relative;
+}
+
+.toggle-pass{
+position:absolute;
+right:10px;
+top:12px;
+cursor:pointer;
+font-size:14px;
+color:#333;
+}
+
+
+/* Buttons */
+
+.login-btn{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+background:#3b82f6;
+color:white;
+font-size:15px;
+cursor:pointer;
+}
+
+.login-btn:hover{
+background:#2563eb;
+}
+
+.anon-btn{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+background:#4b5563;
+color:white;
+cursor:pointer;
+}
+
+
+/* Remember + error */
+
+.options{
+display:flex;
+justify-content:space-between;
+font-size:13px;
+margin-top:10px;
+}
+
+.error{
+color:#ff6b6b;
+font-size:13px;
+margin-top:10px;
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+<img src="https://tse4.mm.bing.net/th/id/OIP.UIq2KvlWALz9qMsgyrjebQHaJH?rs=1&pid=ImgDetMain&o=7&rm=3" class="logo">
+
+<h1 class="portal-title">Student Complaint Portal</h1>
+
+<p class="portal-subtitle">
+Report campus issues quickly and securely
+</p>
+
+<div class="login-form">
+
+<input id="studentId" placeholder="Student ID">
+
+<div class="password-box">
+<input type="password" id="password" placeholder="Password">
+<span class="toggle-pass" onclick="togglePassword()">Show</span>
+</div>
+
+<div class="options">
+
+<label>
+<input type="checkbox" id="remember">
+Remember me
+</label>
+
+</div>
+
+<div class="error" id="errorMsg">
+Invalid Student ID or Password
+</div>
+
+<button class="login-btn" onclick="login()">Login</button>
+
+<button class="anon-btn" onclick="anonymousLogin()">
+Continue Anonymously
+</button>
+
+<p style="margin-top: 15px; font-size: 12px;"><a href="admin-login.html" style="color: #3b82f6; text-decoration: none;">Admin Login</a></p>
+
+</div>
+
+</div>
+
+<script>
+
+/* password show/hide */
+
+function togglePassword(){
+
+let pass=document.getElementById("password")
+
+if(pass.type==="password"){
+pass.type="text"
+}else{
+pass.type="password"
+}
+
+}
+
+
+/* login validation */
+
+async function login(){
+    let id = document.getElementById("studentId").value
+    let pass = document.getElementById("password").value
+    let error = document.getElementById("errorMsg")
+
+    if(id==="" || pass===""){
+        error.style.display="block"
+        return
+    }
+
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: id, password: pass })
+        })
+        const result = await response.json()
+        if (result.success) {
+            localStorage.setItem("user", JSON.stringify(result.user))
+            localStorage.setItem("token", "dummy-token")  // In real app, use JWT
+            window.location.href = "index.html"
+        } else {
+            error.style.display = "block"
+        }
+    } catch (error) {
+        console.error('Login error:', error)
+        document.getElementById("errorMsg").innerText = "Server error"
+        document.getElementById("errorMsg").style.display = "block"
+    }
+}
+
+
+/* anonymous access */
+
+function anonymousLogin(){
+
+localStorage.setItem("anonymous","true")
+window.location.href="index.html"
+
+}
+
+
+/* auto fill remembered login */
+
+window.onload=function(){
+
+let saved=localStorage.getItem("studentId")
+
+if(saved){
+document.getElementById("studentId").value=saved
+document.getElementById("remember").checked=true
+}
+
+}
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,5 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+Werkzeug==2.3.7</content>
+<parameter name="filePath">c:\Users\sanja\OneDrive\Desktop\Final year project\requirements.txt

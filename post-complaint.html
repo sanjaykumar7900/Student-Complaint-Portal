@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Post Complaint - Student Complaint Portal</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body class="dark post-page">
+
+<header>
+
+<h1>Post Complaint</h1>
+
+<div class="nav-buttons">
+
+<label class="toggle-switch">
+<input type="checkbox" id="theme-toggle">
+<span class="slider"></span>
+</label>
+
+<a href="index.html">Back to Portal</a>
+
+</div>
+
+</header>
+
+<div class="container">
+
+<div class="post-form">
+
+<div class="form-header">
+<h2>Submit a New Complaint</h2>
+<p class="form-subtitle">Help us improve by sharing your feedback</p>
+</div>
+
+<div class="form-section">
+<label class="form-label">
+<span class="label-text">Complaint Title</span>
+<span class="label-required">*</span>
+</label>
+<input id="title" placeholder="Brief title of your complaint" required maxlength="100">
+<div class="char-counter">
+<span id="titleCount">0</span>/100
+</div>
+</div>
+
+<div class="form-section">
+<label class="form-label">
+<span class="label-text">Category</span>
+<span class="label-required">*</span>
+</label>
+<select id="category" required>
+<option value="">Select a category</option>
+<option value="Hostel">🏠 Hostel</option>
+<option value="Canteen">🍴 Canteen</option>
+<option value="Academics">📚 Academics</option>
+<option value="Library">📖 Library</option>
+<option value="Sports">⚽ Sports</option>
+<option value="Other">📋 Other</option>
+</select>
+</div>
+
+<div class="form-section">
+<label class="form-label">
+<span class="label-text">Description</span>
+<span class="label-required">*</span>
+</label>
+<textarea id="description" placeholder="Provide detailed information about your complaint..." rows="6" required maxlength="1000"></textarea>
+<div class="char-counter">
+<span id="descCount">0</span>/1000
+</div>
+</div>
+
+<div class="form-section">
+<div class="checkbox-group">
+<label class="checkbox-label">
+<input type="checkbox" id="anonymous">
+<span>Post anonymously</span>
+</label>
+<p class="checkbox-hint">Your identity will be hidden from other students</p>
+<p class="anonymous-note">Not logged in? This complaint will still be submitted anonymously.</p>
+</div>
+</div>
+
+<div class="form-section">
+<label class="form-label media-label">
+<span class="label-text">Attach Media</span>
+<span class="label-optional">(Optional)</span>
+</label>
+<div class="media-upload-box">
+<input type="file" id="mediaUpload" multiple accept="image/*,video/*" class="media-input">
+<div class="media-upload-text">
+<span class="upload-icon">📎</span>
+<p>Click to upload or drag and drop</p>
+<small>PNG, JPG, MP4 up to 10MB each</small>
+</div>
+</div>
+<div id="mediaPreview" class="media-preview-container"></div>
+</div>
+
+<button type="button" class="post-btn" id="submitButton">
+<span class="btn-icon">✓</span>
+Post Complaint
+</button>
+<p id="submitStatus" class="submit-status"></p>
+
+</div>
+
+</div>
+
+<script>
+// Store uploaded media files
+let uploadedMedia = []
+
+// Theme toggle
+const themeToggle = document.getElementById('theme-toggle')
+if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+        document.body.classList.toggle('light')
+        document.body.classList.toggle('dark')
+        const slider = document.querySelector('.slider')
+        if (document.body.classList.contains('dark')) {
+            slider.classList.add('dark')
+        } else {
+            slider.classList.remove('dark')
+        }
+    })
+    // Set initial state
+    if (document.body.classList.contains('dark')) {
+        themeToggle.checked = false
+        document.querySelector('.slider').classList.add('dark')
+    } else {
+        themeToggle.checked = true
+        document.querySelector('.slider').classList.remove('dark')
+    }
+}
+
+// Character counters
+document.getElementById('title').addEventListener('input', (e) => {
+    document.getElementById('titleCount').textContent = e.target.value.length
+})
+
+document.getElementById('description').addEventListener('input', (e) => {
+    document.getElementById('descCount').textContent = e.target.value.length
+})
+
+// Media upload handling
+const mediaUpload = document.getElementById('mediaUpload')
+const mediaUploadBox = document.querySelector('.media-upload-box')
+
+if (mediaUpload && mediaUploadBox) {
+    mediaUploadBox.addEventListener('click', () => {
+        mediaUpload.click()
+    })
+
+    // Drag and drop
+    mediaUploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'copy'
+        mediaUploadBox.style.borderColor = '#3b82f6'
+        mediaUploadBox.style.background = 'rgba(59, 130, 246, 0.1)'
+    })
+
+    mediaUploadBox.addEventListener('dragenter', (e) => {
+        e.preventDefault()
+        mediaUploadBox.style.borderColor = '#3b82f6'
+        mediaUploadBox.style.background = 'rgba(59, 130, 246, 0.1)'
+    })
+
+    mediaUploadBox.addEventListener('dragleave', (e) => {
+        e.preventDefault()
+        if (e.target === mediaUploadBox) {
+            mediaUploadBox.style.borderColor = 'var(--border)'
+            mediaUploadBox.style.background = 'var(--bg)'
+        }
+    })
+
+    mediaUploadBox.addEventListener('drop', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        mediaUploadBox.style.borderColor = 'var(--border)'
+        mediaUploadBox.style.background = 'var(--bg)'
+
+        const files = e.dataTransfer.files
+        handleFiles(files)
+    })
+
+    mediaUpload.addEventListener('change', (e) => {
+        handleFiles(e.target.files)
+    })
+}
+
+function handleFiles(files) {
+    for (let file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File too large: ' + file.name + ' (max 10MB)')
+            continue
+        }
+        
+        uploadedMedia.push({
+            file: file,
+            id: Date.now() + Math.random()
+        })
+    }
+    renderMediaPreview()
+}
+
+function renderMediaPreview() {
+    const container = document.getElementById('mediaPreview')
+    container.innerHTML = ''
+    
+    uploadedMedia.forEach((media, index) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const div = document.createElement('div')
+            div.className = 'preview-item'
+            
+            if (media.file.type.startsWith('image/')) {
+                div.innerHTML = `
+                    <img src="${e.target.result}">
+                    <button class="remove-media" onclick="removeMedia(${index})">×</button>
+                `
+            } else {
+                div.innerHTML = `
+                    <video><source src="${e.target.result}"></video>
+                    <button class="remove-media" onclick="removeMedia(${index})">×</button>
+                `
+            }
+            container.appendChild(div)
+        }
+        reader.readAsDataURL(media.file)
+    })
+}
+
+function removeMedia(index) {
+    uploadedMedia.splice(index, 1)
+    renderMediaPreview()
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+    })
+}
+
+async function submitComplaint() {
+    const statusElement = document.getElementById('submitStatus')
+    statusElement.textContent = ''
+
+    const title = document.getElementById('title').value.trim()
+    const description = document.getElementById('description').value.trim()
+    const category = document.getElementById('category').value
+    let anonymous = document.getElementById('anonymous').checked
+
+    if (!title || !description || !category) {
+        statusElement.textContent = 'Please fill in all required fields before submitting.'
+        return
+    }
+
+    const storedUser = localStorage.getItem('user')
+    const currentUser = storedUser ? JSON.parse(storedUser) : null
+    if (!currentUser) {
+        anonymous = true
+    }
+
+    const mediaData = []
+    for (let media of uploadedMedia) {
+        const base64 = await blobToBase64(media.file)
+        mediaData.push({
+            filename: media.file.name,
+            data: base64,
+            type: media.file.type.startsWith('image/') ? 'image' : 'video'
+        })
+    }
+
+    async function tryPost(url) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                description,
+                category,
+                anonymous,
+                author: currentUser && currentUser.student_id ? currentUser.student_id : 'Anonymous',
+                media: mediaData
+            })
+        })
+    }
+
+    const endpoints = [
+        '/api/complaints',
+        'http://127.0.0.1:5000/api/complaints',
+        'http://localhost:5000/api/complaints'
+    ]
+
+    let response = null
+    let lastError = null
+
+    for (let endpoint of endpoints) {
+        try {
+            response = await tryPost(endpoint)
+            if (response) break
+        } catch (error) {
+            console.warn('Post endpoint failed:', endpoint, error)
+            lastError = error
+        }
+    }
+
+    if (!response) {
+        console.error('Unable to reach complaint API', lastError)
+        statusElement.textContent = 'Unable to reach the backend API. Make sure the server is running.'
+        return
+    }
+
+    try {
+        if (response.ok) {
+            alert('Complaint posted successfully!')
+            window.location.href = 'index.html'
+        } else {
+            const errorText = await response.text()
+            console.error('Complaint post failed:', response.status, errorText)
+            statusElement.textContent = 'Failed to post complaint: ' + response.status + ' ' + errorText
+        }
+    } catch (error) {
+        console.error('Error reading response:', error)
+        statusElement.textContent = 'Error posting complaint: ' + error.message
+    }
+}
+
+document.getElementById('submitButton').addEventListener('click', submitComplaint)
+window.submitComplaint = submitComplaint
+</script>
+
+</body>
+
+</html>
